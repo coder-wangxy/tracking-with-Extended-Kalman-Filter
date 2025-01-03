@@ -42,8 +42,10 @@ private:
   Tools tools;
   Eigen::MatrixXd R_laser_;    // laser measurement noise
   Eigen::MatrixXd R_radar_;    // radar measurement noise
+  Eigen::MatrixXd R_uss_;      // USS measurement noise
   Eigen::MatrixXd H_laser_;    // measurement function for laser
   Eigen::MatrixXd H_jacobian;         // measurement function for radar
+  Eigen::MatrixXd H_uss_;      // measurement function for USS
 
   float noise_ax;
   float noise_ay;

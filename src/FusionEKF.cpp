@@ -1,11 +1,15 @@
 #include "FusionEKF.h"
 #include "tools.h"
 #include "Eigen/Dense"
+#include "../radar_config.h"
+#include "../uss_config.h"
 #include <iostream>
 
 using namespace std;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using namespace radar_config;
+using namespace uss_config;
 using std::vector;
 
 Tools tools;
@@ -21,17 +25,19 @@ FusionEKF::FusionEKF() {
   // initializing matrices
   R_laser_ = MatrixXd(2, 2);
   R_radar_ = MatrixXd(3, 3);
+  R_uss_ = MatrixXd(1, 1);
   H_laser_ = MatrixXd(2, 4);
   H_jacobian = MatrixXd(3, 4);
+  H_uss_ = MatrixXd(1, 4);
 
   //measurement covariance matrix - laser
   R_laser_ << 0.0225, 0,
               0, 0.0225;
 
   //measurement covariance matrix - radar
-  R_radar_ << 0.09, 0, 0,
-              0, 0.0009, 0,
-              0, 0, 0.09;
+  R_radar_ << RADAR_NOISE_RHO,    0,                 0,
+              0,                  RADAR_NOISE_PHI,    0,
+              0,                  0,                  RADAR_NOISE_RHODOT;
 
   /**
   TODO:
@@ -41,6 +47,12 @@ FusionEKF::FusionEKF() {
 
   H_laser_ << 1, 0, 0, 0,
               0, 1, 0, 0;
+              
+  // USS measurement matrix - measures only x distance
+  H_uss_ << 1, 0, 0, 0;
+  
+  // USS measurement noise
+  R_uss_ << USS_NOISE_RANGE;
 
 	// initialize the kalman filter variables
   ekf_.P_ = MatrixXd(4, 4);
@@ -56,8 +68,8 @@ FusionEKF::FusionEKF() {
              0, 0, 0, 1;
 
   // set measurement noises
-  noise_ax = 9;
-  noise_ay = 9;
+  noise_ax = radar_config::NOISE_AX;
+  noise_ay = radar_config::NOISE_AY;
 }
 
 /**
@@ -98,6 +110,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       */
 
       ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0; // x, y, vx, vy
+    }
+    else if (measurement_pack.sensor_type_ == MeasurementPackage::USS) {
+      /**
+      Initialize state with USS measurement.
+      USS provides x-distance only, initialize y to 0
+      */
+      ekf_.x_ << measurement_pack.raw_measurements_[0], 0, 0, 0; // x, y=0, vx, vy
     }
 
 
@@ -157,10 +176,16 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.R_ = R_radar_;
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   }
-  else {
+  else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
     // Laser updates
     ekf_.H_ = H_laser_;
     ekf_.R_ = R_laser_;
+    ekf_.Update(measurement_pack.raw_measurements_);
+  }
+  else if (measurement_pack.sensor_type_ == MeasurementPackage::USS) {
+    // USS updates - using linear measurement model
+    ekf_.H_ = H_uss_;
+    ekf_.R_ = R_uss_;
     ekf_.Update(measurement_pack.raw_measurements_);
   }
 
