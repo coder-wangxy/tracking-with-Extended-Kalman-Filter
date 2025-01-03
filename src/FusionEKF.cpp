@@ -1,11 +1,13 @@
 #include "FusionEKF.h"
 #include "tools.h"
 #include "Eigen/Dense"
+#include "../radar_config.h"
 #include <iostream>
 
 using namespace std;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using namespace radar_config;
 using std::vector;
 
 Tools tools;
@@ -29,9 +31,9 @@ FusionEKF::FusionEKF() {
               0, 0.0225;
 
   //measurement covariance matrix - radar
-  R_radar_ << 0.09, 0, 0,
-              0, 0.0009, 0,
-              0, 0, 0.09;
+  R_radar_ << RADAR_NOISE_RHO,    0,                 0,
+              0,                  RADAR_NOISE_PHI,    0,
+              0,                  0,                  RADAR_NOISE_RHODOT;
 
   /**
   TODO:
@@ -56,8 +58,8 @@ FusionEKF::FusionEKF() {
              0, 0, 0, 1;
 
   // set measurement noises
-  noise_ax = 9;
-  noise_ay = 9;
+  noise_ax = NOISE_AX;
+  noise_ay = NOISE_AY;
 }
 
 /**
