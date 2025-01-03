@@ -186,6 +186,7 @@ One comparison Figure from _**another aspect**_.
 * _u_ is the process noise, which is a Gaussian with zero mean and covariance as Q.
 * _Q_ is the covariance matrix of the process noise.
 
+
 **For EKF**
 * To calculate predicted state vector _x′_, the prediction function _f(x)_, is used instead of the _F_ matrix.
 * The _F_ matrix will be replaced by _Fj_ (jocobian matrix of _f_) when calculating _P′_.
